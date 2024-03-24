@@ -297,7 +297,7 @@ jobs:
           context: ./
           build-args: "VERSION=${{ matrix.version }}"
           push: true
-          platforms: "linux/amd64,linux/arm64"
+          platforms: "linux/amd64"
           tags: |
             ams21/cmake:${{ matrix.version }}
             ghcr.io/ams21/cmake:${{ matrix.version }}
