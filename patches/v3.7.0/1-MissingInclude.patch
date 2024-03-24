@@ -1,0 +1,13 @@
+diff --git a/Source/cmServerProtocol.cxx b/Source/cmServerProtocol.cxx
+index 09b08fe8de..f7044b2b5d 100644
+--- a/Source/cmServerProtocol.cxx
++++ b/Source/cmServerProtocol.cxx
+@@ -27,6 +27,8 @@
+ #include <string>
+ #include <vector>
+ 
++#include <limits>
++
+ // Get rid of some windows macros:
+ #undef max
+ 

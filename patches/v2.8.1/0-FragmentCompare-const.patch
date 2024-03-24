@@ -1,0 +1,13 @@
+diff --git a/Source/CTest/cmCTestBuildHandler.cxx b/Source/CTest/cmCTestBuildHandler.cxx
+index a125459..a6a3a1e 100644
+--- a/Source/CTest/cmCTestBuildHandler.cxx
++++ b/Source/CTest/cmCTestBuildHandler.cxx
+@@ -551,7 +551,7 @@ class cmCTestBuildHandler::FragmentCompare
+ {
+ public:
+   FragmentCompare(cmFileTimeComparison* ftc): FTC(ftc) {}
+-  bool operator()(std::string const& l, std::string const& r)
++  bool operator()(std::string const& l, std::string const& r) const
+     {
+     // Order files by modification time.  Use lexicographic order
+     // among files with the same time.

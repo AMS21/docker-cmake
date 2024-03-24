@@ -1,0 +1,13 @@
+diff --git a/Source/cmGeneratorExpressionEvaluationFile.h b/Source/cmGeneratorExpressionEvaluationFile.h
+index 3394ade8f2..9604b1460c 100644
+--- a/Source/cmGeneratorExpressionEvaluationFile.h
++++ b/Source/cmGeneratorExpressionEvaluationFile.h
+@@ -17,6 +17,8 @@
+ 
+ #include "cmGeneratorExpression.h"
+ 
++#include <sys/types.h>
++
+ //----------------------------------------------------------------------------
+ class cmGeneratorExpressionEvaluationFile
+ {
