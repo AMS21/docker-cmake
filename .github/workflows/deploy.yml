@@ -11,6 +11,8 @@ on:
       - '.github/workflows/deploy.yml'
       # Dockerfile
       - '**/Dockerfile'
+      # Patches
+      - 'patches/**'
   workflow_dispatch:
 
 permissions:
