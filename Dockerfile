@@ -12,4 +12,6 @@ RUN apk update && apk upgrade --no-cache && \
     CXXFLAGS="-w" ./bootstrap --parallel=$(nproc) && CXXFLAGS="-w" make -j $(nproc) && \
     make install && \
     cd .. && \
-    rm -rf CMake && rm -rf patches
+    rm -rf CMake && rm -rf patches && \
+    apk del --purge git linux-headers openssl-dev && \
+    rm -rf /var/cache/apk/*
