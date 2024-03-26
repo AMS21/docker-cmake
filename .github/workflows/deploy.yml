@@ -21,258 +21,276 @@ permissions:
 
 jobs:
   push_to_registry:
-    name: Push Docker image to Docker Hub
+    name: Push Docker image (${{ matrix.cfg.tag }})
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
 
       matrix:
-        version:
+        cfg:
           # CMake 3.29.x
-          - "v3.29.0"
+          - { version: "v3.29.0", tag: "3.29.0", latest: true, latest_major: true, latest_minor: true } # Latest
 
           # CMake 3.28.x
-          - "v3.28.4"
-          - "v3.28.3"
-          - "v3.28.2"
-          - "v3.28.1"
-          - "v3.28.0"
+          - { version: "v3.28.4", tag: "3.28.4", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.28.3", tag: "3.28.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.28.2", tag: "3.28.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.28.1", tag: "3.28.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.28.0", tag: "3.28.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.27.x
-          - "v3.27.9"
-          - "v3.27.8"
-          - "v3.27.7"
-          - "v3.27.6"
-          - "v3.27.5"
-          - "v3.27.4"
-          - "v3.27.3"
-          - "v3.27.2"
-          - "v3.27.1"
-          - "v3.27.0"
+          - { version: "v3.27.9", tag: "3.27.9", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.27.8", tag: "3.27.8", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.7", tag: "3.27.7", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.6", tag: "3.27.6", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.5", tag: "3.27.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.4", tag: "3.27.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.3", tag: "3.27.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.2", tag: "3.27.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.1", tag: "3.27.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.27.0", tag: "3.27.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.26.x
-          - "v3.26.6"
-          - "v3.26.5"
-          - "v3.26.4"
-          - "v3.26.3"
-          - "v3.26.2"
-          - "v3.26.1"
-          - "v3.26.0"
+          - { version: "v3.26.6", tag: "3.26.6", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.26.5", tag: "3.26.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.26.4", tag: "3.26.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.26.3", tag: "3.26.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.26.2", tag: "3.26.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.26.1", tag: "3.26.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.26.0", tag: "3.26.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.25.x
-          - "v3.25.3"
-          - "v3.25.2"
-          - "v3.25.1"
-          - "v3.25.0"
+          - { version: "v3.25.3", tag: "3.25.3", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.25.2", tag: "3.25.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.25.1", tag: "3.25.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.25.0", tag: "3.25.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.24.x
-          - "v3.24.4"
-          - "v3.24.3"
-          - "v3.24.2"
-          - "v3.24.1"
-          - "v3.24.0"
+          - { version: "v3.24.4", tag: "3.24.4", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.24.3", tag: "3.24.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.24.2", tag: "3.24.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.24.1", tag: "3.24.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.24.0", tag: "3.24.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.23.x
-          - "v3.23.5"
-          - "v3.23.4"
-          - "v3.23.3"
-          - "v3.23.2"
-          - "v3.23.1"
-          - "v3.23.0"
+          - { version: "v3.23.5", tag: "3.23.5", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.23.4", tag: "3.23.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.23.3", tag: "3.23.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.23.2", tag: "3.23.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.23.1", tag: "3.23.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.23.0", tag: "3.23.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.22.x
-          - "v3.22.6"
-          - "v3.22.5"
-          - "v3.22.4"
-          - "v3.22.3"
-          - "v3.22.2"
-          - "v3.22.1"
-          - "v3.22.0"
+          - { version: "v3.22.6", tag: "3.22.6", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.22.5", tag: "3.22.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.22.4", tag: "3.22.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.22.3", tag: "3.22.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.22.2", tag: "3.22.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.22.1", tag: "3.22.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.22.0", tag: "3.22.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.21.x
-          - "v3.21.7"
-          - "v3.21.6"
-          - "v3.21.5"
-          - "v3.21.4"
-          - "v3.21.3"
-          - "v3.21.2"
-          - "v3.21.1"
-          - "v3.21.0"
+          - { version: "v3.21.7", tag: "3.21.7", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.21.6", tag: "3.21.6", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.21.5", tag: "3.21.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.21.4", tag: "3.21.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.21.3", tag: "3.21.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.21.2", tag: "3.21.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.21.1", tag: "3.21.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.21.0", tag: "3.21.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.20.x
-          - "v3.20.6"
-          - "v3.20.5"
-          - "v3.20.4"
-          - "v3.20.3"
-          - "v3.20.2"
-          - "v3.20.1"
-          - "v3.20.0"
+          - { version: "v3.20.6", tag: "3.20.6", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.20.5", tag: "3.20.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.20.4", tag: "3.20.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.20.3", tag: "3.20.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.20.2", tag: "3.20.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.20.1", tag: "3.20.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.20.0", tag: "3.20.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.19.x
-          - "v3.19.8"
-          - "v3.19.7"
-          - "v3.19.6"
-          - "v3.19.5"
-          - "v3.19.4"
-          - "v3.19.3"
-          - "v3.19.2"
-          - "v3.19.1"
-          - "v3.19.0"
+          - { version: "v3.19.8", tag: "3.19.8", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.19.7", tag: "3.19.7", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.6", tag: "3.19.6", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.5", tag: "3.19.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.4", tag: "3.19.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.3", tag: "3.19.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.2", tag: "3.19.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.1", tag: "3.19.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.19.0", tag: "3.19.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.18.x
-          - "v3.18.6"
-          - "v3.18.5"
-          - "v3.18.4"
-          - "v3.18.3"
-          - "v3.18.2"
-          - "v3.18.1"
-          - "v3.18.0"
+          - { version: "v3.18.6", tag: "3.18.6", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.18.5", tag: "3.18.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.18.4", tag: "3.18.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.18.3", tag: "3.18.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.18.2", tag: "3.18.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.18.1", tag: "3.18.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.18.0", tag: "3.18.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.17.x
-          - "v3.17.5"
-          - "v3.17.4"
-          - "v3.17.3"
-          - "v3.17.2"
-          - "v3.17.1"
-          - "v3.17.0"
+          - { version: "v3.17.5", tag: "3.17.5", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.17.4", tag: "3.17.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.17.3", tag: "3.17.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.17.2", tag: "3.17.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.17.1", tag: "3.17.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.17.0", tag: "3.17.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.16.x
-          - "v3.16.9"
-          - "v3.16.8"
-          - "v3.16.7"
-          - "v3.16.6"
-          - "v3.16.5"
-          - "v3.16.4"
-          - "v3.16.3"
-          - "v3.16.2"
-          - "v3.16.1"
-          - "v3.16.0"
+          - { version: "v3.16.9", tag: "3.16.9", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.16.8", tag: "3.16.8", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.7", tag: "3.16.7", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.6", tag: "3.16.6", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.5", tag: "3.16.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.4", tag: "3.16.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.3", tag: "3.16.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.2", tag: "3.16.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.1", tag: "3.16.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.16.0", tag: "3.16.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.15.x
-          - "v3.15.7"
-          - "v3.15.6"
-          - "v3.15.5"
-          - "v3.15.4"
-          - "v3.15.3"
-          - "v3.15.2"
-          - "v3.15.1"
-          - "v3.15.0"
+          - { version: "v3.15.7", tag: "3.15.7", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.15.6", tag: "3.15.6", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.15.5", tag: "3.15.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.15.4", tag: "3.15.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.15.3", tag: "3.15.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.15.2", tag: "3.15.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.15.1", tag: "3.15.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.15.0", tag: "3.15.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.14.x
-          - "v3.14.7"
-          - "v3.14.6"
-          - "v3.14.5"
-          - "v3.14.4"
-          - "v3.14.3"
-          - "v3.14.2"
-          - "v3.14.1"
-          - "v3.14.0"
+          - { version: "v3.14.7", tag: "3.14.7", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.14.6", tag: "3.14.6", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.14.5", tag: "3.14.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.14.4", tag: "3.14.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.14.3", tag: "3.14.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.14.2", tag: "3.14.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.14.1", tag: "3.14.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.14.0", tag: "3.14.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.13.x
-          - "v3.13.5"
-          - "v3.13.4"
-          - "v3.13.3"
-          - "v3.13.2"
-          - "v3.13.1"
-          - "v3.13.0"
+          - { version: "v3.13.5", tag: "3.13.5", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.13.4", tag: "3.13.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.13.3", tag: "3.13.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.13.2", tag: "3.13.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.13.1", tag: "3.13.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.13.0", tag: "3.13.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.12.x
-          - "v3.12.4"
-          - "v3.12.3"
-          - "v3.12.2"
-          - "v3.12.1"
-          - "v3.12.0"
+          - { version: "v3.12.4", tag: "3.12.4", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.12.3", tag: "3.12.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.12.2", tag: "3.12.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.12.1", tag: "3.12.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.12.0", tag: "3.12.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.11.x
-          - "v3.11.4"
-          - "v3.11.3"
-          - "v3.11.2"
-          - "v3.11.1"
-          - "v3.11.0"
+          - { version: "v3.11.4", tag: "3.11.4", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.11.3", tag: "3.11.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.11.2", tag: "3.11.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.11.1", tag: "3.11.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.11.0", tag: "3.11.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.10.x
-          - "v3.10.3"
-          - "v3.10.2"
-          - "v3.10.1"
-          - "v3.10.0"
+          - { version: "v3.10.3", tag: "3.10.3", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.10.2", tag: "3.10.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.10.1", tag: "3.10.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.10.0", tag: "3.10.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.9.x
-          - "v3.9.6"
-          - "v3.9.5"
-          - "v3.9.4"
-          - "v3.9.3"
-          - "v3.9.2"
-          - "v3.9.1"
-          - "v3.9.0"
+          - { version: "v3.9.6", tag: "3.9.6", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.9.5", tag: "3.9.5", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.9.4", tag: "3.9.4", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.9.3", tag: "3.9.3", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.9.2", tag: "3.9.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.9.1", tag: "3.9.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.9.0", tag: "3.9.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.8.x
-          - "v3.8.2"
-          - "v3.8.1"
-          - "v3.8.0"
+          - { version: "v3.8.2", tag: "3.8.2", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.8.1", tag: "3.8.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.8.0", tag: "3.8.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.7.x
-          - "v3.7.2"
-          - "v3.7.1"
-          - "v3.7.0"
+          - { version: "v3.7.2", tag: "3.7.2", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.7.1", tag: "3.7.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.7.0", tag: "3.7.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.6.x
-          - "v3.6.3"
-          - "v3.6.2"
-          - "v3.6.1"
-          - "v3.6.0"
+          - { version: "v3.6.3", tag: "3.6.3", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.6.2", tag: "3.6.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.6.1", tag: "3.6.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.6.0", tag: "3.6.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.5.x
-          - "v3.5.2"
-          - "v3.5.1"
-          - "v3.5.0"
+          - { version: "v3.5.2", tag: "3.5.2", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.5.1", tag: "3.5.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.5.0", tag: "3.5.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.4.x
-          - "v3.4.3"
-          - "v3.4.2"
-          - "v3.4.1"
-          - "v3.4.0"
+          - { version: "v3.4.3", tag: "3.4.3", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.4.2", tag: "3.4.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.4.1", tag: "3.4.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.4.0", tag: "3.4.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.3.x
-          - "v3.3.2"
-          - "v3.3.1"
-          - "v3.3.0"
+          - { version: "v3.3.2", tag: "3.3.2", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.3.1", tag: "3.3.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.3.0", tag: "3.3.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.2.x
-          - "v3.2.3"
-          - "v3.2.2"
-          - "v3.2.1"
-          - "v3.2.0"
+          - { version: "v3.2.3", tag: "3.2.3", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.2.2", tag: "3.2.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.2.1", tag: "3.2.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.2.0", tag: "3.2.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.1.x
-          - "v3.1.3"
-          - "v3.1.2"
-          - "v3.1.1"
-          - "v3.1.0"
+          - { version: "v3.1.3", tag: "3.1.3", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.1.2", tag: "3.1.2", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.1.1", tag: "3.1.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.1.0", tag: "3.1.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 3.0.x
-          - "v3.0.2"
-          - "v3.0.1"
-          - "v3.0.0"
+          - { version: "v3.0.2", tag: "3.0.2", latest: false, latest_major: false, latest_minor: true  }
+          - { version: "v3.0.1", tag: "3.0.1", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v3.0.0", tag: "3.0.0", latest: false, latest_major: false, latest_minor: false }
 
           # CMake 2.8.x
-          - "v2.8.12"
-          - "v2.8.11"
-          - "v2.8.10"
-          - "v2.8.9"
-          - "v2.8.8"
-          - "v2.8.7"
-          - "v2.8.6"
-          - "v2.8.5"
-          - "v2.8.4"
-          - "v2.8.3"
-          - "v2.8.2"
-          - "v2.8.1"
-          - "v2.8.0"
+          - { version: "v2.8.12", tag: "2.8.12", latest: false, latest_major: true,  latest_minor: true  }
+          - { version: "v2.8.11", tag: "2.8.11", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.10", tag: "2.8.10", latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.9",  tag: "2.8.9",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.8",  tag: "2.8.8",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.7",  tag: "2.8.7",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.6",  tag: "2.8.6",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.5",  tag: "2.8.5",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.4",  tag: "2.8.4",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.3",  tag: "2.8.3",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.2",  tag: "2.8.2",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.1",  tag: "2.8.1",  latest: false, latest_major: false, latest_minor: false }
+          - { version: "v2.8.0",  tag: "2.8.0",  latest: false, latest_major: false, latest_minor: false }
 
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ams21/cmake
+            ghcr.io/ams21/cmake
+          flavor: |
+            latest=${{ matrix.cfg.latest }}
+            prefix=
+            suffix=
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=semver,pattern={{version}},value=${{ matrix.cfg.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ matrix.cfg.tag }},enable=${{ matrix.cfg.latest_minor }}
+            type=semver,pattern={{major}},value=${{ matrix.cfg.tag }},enable=${{ matrix.cfg.latest_major }}
 
       - name: Docker Setup QEMU
         uses: docker/setup-qemu-action@v3.0.0
@@ -297,9 +315,9 @@ jobs:
         uses: docker/build-push-action@v5.3.0
         with:
           context: ./
-          build-args: "VERSION=${{ matrix.version }}"
+          build-args: "VERSION=${{ matrix.cfg.version }}"
           push: true
           platforms: "linux/amd64"
-          tags: |
-            ams21/cmake:${{ matrix.version }}
-            ghcr.io/ams21/cmake:${{ matrix.version }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
