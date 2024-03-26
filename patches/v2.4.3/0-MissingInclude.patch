@@ -1,0 +1,51 @@
+diff --git a/Source/kwsys/Registry.cxx b/Source/kwsys/Registry.cxx
+index a4e8d027d7..c1a1c78766 100644
+--- a/Source/kwsys/Registry.cxx
++++ b/Source/kwsys/Registry.cxx
+@@ -41,6 +41,7 @@
+ # include <windows.h>
+ #endif
+ 
++#include <cstring>
+ 
+ namespace KWSYS_NAMESPACE
+ {
+diff --git a/Source/kwsys/testCommandLineArguments.cxx b/Source/kwsys/testCommandLineArguments.cxx
+index 03d63a8403..5d8b2d12bf 100644
+--- a/Source/kwsys/testCommandLineArguments.cxx
++++ b/Source/kwsys/testCommandLineArguments.cxx
+@@ -23,6 +23,8 @@
+ # include "kwsys_ios_iostream.h.in"
+ #endif
+ 
++#include <cstring>
++
+ void* random_ptr = reinterpret_cast<void*>(0x123);
+ 
+ int argument(const char* arg, const char* value, void* call_data)
+diff --git a/Source/kwsys/testCommandLineArguments1.cxx b/Source/kwsys/testCommandLineArguments1.cxx
+index dedfe3101e..1ef45884bb 100644
+--- a/Source/kwsys/testCommandLineArguments1.cxx
++++ b/Source/kwsys/testCommandLineArguments1.cxx
+@@ -23,6 +23,8 @@
+ # include "kwsys_ios_iostream.h.in"
+ #endif
+ 
++#include <cstring>
++
+ int main(int argc, char* argv[])
+ {
+   kwsys::CommandLineArguments arg;
+diff --git a/Source/kwsys/testSystemTools.cxx b/Source/kwsys/testSystemTools.cxx
+index c4da9e142e..f7d149282a 100644
+--- a/Source/kwsys/testSystemTools.cxx
++++ b/Source/kwsys/testSystemTools.cxx
+@@ -29,6 +29,8 @@
+ 
+ #include "testSystemTools.h"
+ 
++#include <cstring>
++
+ //----------------------------------------------------------------------------
+ const char* toUnixPaths[][2] =
+ {

@@ -1,0 +1,1161 @@
+From ce6eac8b58b0230cd1d8ee100a27973e5354a5c4 Mon Sep 17 00:00:00 2001
+From: KWSys Robot <kwrobot@kitware.com>
+Date: Tue, 6 Aug 2013 09:10:11 -0400
+Subject: [PATCH] KWSys 2013-08-06 (deec6b8a)
+
+Extract upstream KWSys using the following shell commands.
+
+$ git archive --prefix=upstream-kwsys/ deec6b8a | tar x
+$ git shortlog --no-merges --abbrev=8 --format='%h %s' beef6819..deec6b8a
+Brad King (1):
+      e39f85e0 SystemTools: Activate EnableMSVCDebugHook under CTest
+
+Burlen Loring (1):
+      1d882d4c SystemInformation : Better stack trace
+
+Patrick Gansterer (2):
+      89e42c36 SystemTools: Remove duplicate code for parsing Windows registry keys
+      deec6b8a SystemTools: Add a function to get subkeys of a Windows registry key
+
+Sean McBride (1):
+      4c4f8a9e Supress clang warnings about dynamic exception specifications
+
+Change-Id: I37367dc5db58818d5954735e00c6d523a1dd1411
+---
+ CMakeLists.txt            |  83 ++++++++-
+ SystemInformation.cxx     | 380 ++++++++++++++++++++++++++++++++++----
+ SystemInformation.hxx.in  |   6 +
+ SystemTools.cxx           | 209 +++++++++++----------
+ SystemTools.hxx.in        |   7 +
+ auto_ptr.hxx.in           |  18 ++
+ hashtable.hxx.in          |  18 ++
+ kwsysPlatformTests.cmake  |   3 +
+ kwsysPlatformTestsCXX.cxx |  48 +++++
+ testSystemInformation.cxx |  21 ++-
+ 10 files changed, 648 insertions(+), 145 deletions(-)
+
+diff --git a/Source/kwsys/CMakeLists.txt b/Source/kwsys/CMakeLists.txt
+index 6f0281d1297..0f2783689d9 100644
+--- a/Source/kwsys/CMakeLists.txt
++++ b/Source/kwsys/CMakeLists.txt
+@@ -649,6 +649,68 @@ IF(KWSYS_USE_SystemInformation)
+     SET_PROPERTY(SOURCE SystemInformation.cxx APPEND PROPERTY
+       COMPILE_DEFINITIONS KWSYS_CXX_HAS__ATOI64=1)
+   ENDIF()
++  IF(UNIX)
++    INCLUDE(CheckIncludeFileCXX)
++    # check for simple stack trace
++    # usually it's in libc but on FreeBSD
++    # it's in libexecinfo
++    FIND_LIBRARY(EXECINFO_LIB "execinfo")
++    IF (NOT EXECINFO_LIB)
++      SET(EXECINFO_LIB "")
++    ENDIF()
++    CHECK_INCLUDE_FILE_CXX("execinfo.h" KWSYS_CXX_HAS_EXECINFOH)
++    IF (KWSYS_CXX_HAS_EXECINFOH)
++      # we have the backtrace header check if it
++      # can be used  with this compiler
++      SET(KWSYS_PLATFORM_CXX_TEST_LINK_LIBRARIES ${EXECINFO_LIB})
++      KWSYS_PLATFORM_CXX_TEST(KWSYS_CXX_HAS_BACKTRACE
++         "Checking whether backtrace works with this C++ compiler" DIRECT)
++      SET(KWSYS_PLATFORM_CXX_TEST_LINK_LIBRARIES)
++      IF (KWSYS_CXX_HAS_BACKTRACE)
++        # backtrace is supported by this system and compiler.
++        # now check for the more advanced capabilities.
++        SET_PROPERTY(SOURCE SystemInformation.cxx APPEND PROPERTY
++          COMPILE_DEFINITIONS KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE=1)
++        # check for symbol lookup using dladdr
++        CHECK_INCLUDE_FILE_CXX("dlfcn.h" KWSYS_CXX_HAS_DLFCNH)
++        IF (KWSYS_CXX_HAS_DLFCNH)
++          # we have symbol lookup libraries and headers
++          # check if they can be used with this compiler
++          SET(KWSYS_PLATFORM_CXX_TEST_LINK_LIBRARIES ${CMAKE_DL_LIBS})
++            KWSYS_PLATFORM_CXX_TEST(KWSYS_CXX_HAS_DLADDR
++            "Checking whether dladdr works with this C++ compiler" DIRECT)
++          SET(KWSYS_PLATFORM_CXX_TEST_LINK_LIBRARIES)
++          IF (KWSYS_CXX_HAS_DLADDR)
++            # symbol lookup is supported by this system
++            # and compiler.
++            SET_PROPERTY(SOURCE SystemInformation.cxx APPEND PROPERTY
++              COMPILE_DEFINITIONS KWSYS_SYSTEMINFORMATION_HAS_SYMBOL_LOOKUP=1)
++          ENDIF()
++        ENDIF()
++        # c++ demangling support
++        # check for cxxabi headers
++        CHECK_INCLUDE_FILE_CXX("cxxabi.h" KWSYS_CXX_HAS_CXXABIH)
++        IF (KWSYS_CXX_HAS_CXXABIH)
++          # check if cxxabi can be used with this
++          # system and compiler.
++          KWSYS_PLATFORM_CXX_TEST(KWSYS_CXX_HAS_CXXABI
++            "Checking whether cxxabi works with this C++ compiler" DIRECT)
++          IF (KWSYS_CXX_HAS_CXXABI)
++            # c++ demangle using cxxabi is supported with
++            # this system and compiler
++            SET_PROPERTY(SOURCE SystemInformation.cxx APPEND PROPERTY
++              COMPILE_DEFINITIONS KWSYS_SYSTEMINFORMATION_HAS_CPP_DEMANGLE=1)
++          ENDIF()
++        ENDIF()
++        # basic backtrace works better with release build
++        # don't bother with advanced features for release
++        SET_PROPERTY(SOURCE SystemInformation.cxx APPEND PROPERTY
++          COMPILE_DEFINITIONS_DEBUG KWSYS_SYSTEMINFORMATION_HAS_DEBUG_BUILD=1)
++        SET_PROPERTY(SOURCE SystemInformation.cxx APPEND PROPERTY
++          COMPILE_DEFINITIONS_RELWITHDEBINFO KWSYS_SYSTEMINFORMATION_HAS_DEBUG_BUILD=1)
++      ENDIF()
++    ENDIF()
++  ENDIF()
+   IF(BORLAND)
+     KWSYS_PLATFORM_CXX_TEST(KWSYS_CXX_HAS_BORLAND_ASM
+       "Checking whether Borland CXX compiler supports assembler instructions" DIRECT)
+@@ -913,12 +975,23 @@ IF(KWSYS_C_SRCS OR KWSYS_CXX_SRCS)
+     ENDIF(UNIX)
+   ENDIF(KWSYS_USE_DynamicLoader)
+ 
+-  IF(KWSYS_USE_SystemInformation AND WIN32)
+-    TARGET_LINK_LIBRARIES(${KWSYS_NAMESPACE} ws2_32)
+-    IF(KWSYS_SYS_HAS_PSAPI)
+-      TARGET_LINK_LIBRARIES(${KWSYS_NAMESPACE} Psapi)
++  IF(KWSYS_USE_SystemInformation)
++    IF(WIN32)
++      TARGET_LINK_LIBRARIES(${KWSYS_NAMESPACE} ws2_32)
++      IF(KWSYS_SYS_HAS_PSAPI)
++        TARGET_LINK_LIBRARIES(${KWSYS_NAMESPACE} Psapi)
++      ENDIF()
++    ELSEIF(UNIX)
++      IF (EXECINFO_LIB AND KWSYS_CXX_HAS_BACKTRACE)
++        # backtrace on FreeBSD is not in libc
++        TARGET_LINK_LIBRARIES(${KWSYS_NAMESPACE} ${EXECINFO_LIB})
++      ENDIF()
++      IF (KWSYS_CXX_HAS_DLADDR)
++        # for symbol lookup using dladdr
++        TARGET_LINK_LIBRARIES(${KWSYS_NAMESPACE} ${CMAKE_DL_LIBS})
++      ENDIF()
+     ENDIF()
+-  ENDIF(KWSYS_USE_SystemInformation AND WIN32)
++  ENDIF()
+ 
+   # Apply user-defined target properties to the library.
+   IF(KWSYS_PROPERTIES_CXX)
+diff --git a/Source/kwsys/SystemInformation.cxx b/Source/kwsys/SystemInformation.cxx
+index 9db1dee381f..beefd7d7368 100644
+--- a/Source/kwsys/SystemInformation.cxx
++++ b/Source/kwsys/SystemInformation.cxx
+@@ -18,6 +18,10 @@
+ # include <winsock.h> // WSADATA, include before sys/types.h
+ #endif
+ 
++#if (defined(__GNUC__) || defined(__PGI)) && !defined(_GNU_SOURCE)
++# define _GNU_SOURCE
++#endif
++
+ // TODO:
+ // We need an alternative implementation for many functions in this file
+ // when USE_ASM_INSTRUCTIONS gets defined as 0.
+@@ -114,8 +118,15 @@ typedef int siginfo_t;
+ #  define KWSYS_SYSTEMINFORMATION_IMPLEMENT_FQDN
+ # endif
+ # if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__-0 >= 1050
+-#  include <execinfo.h>
+-#  define KWSYS_SYSTEMINFORMATION_HAVE_BACKTRACE
++#  if defined(KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE)
++#   include <execinfo.h>
++#   if defined(KWSYS_SYSTEMINFORMATION_HAS_CPP_DEMANGLE)
++#     include <cxxabi.h>
++#   endif
++#   if defined(KWSYS_SYSTEMINFORMATION_HAS_SYMBOL_LOOKUP)
++#     include <dlfcn.h>
++#   endif
++#  endif
+ # endif
+ #endif
+ 
+@@ -130,10 +141,13 @@ typedef int siginfo_t;
+ #   define KWSYS_SYSTEMINFORMATION_IMPLEMENT_FQDN
+ #  endif
+ # endif
+-# if defined(__GNUC__)
++# if defined(KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE)
+ #  include <execinfo.h>
+-#  if !(defined(__LSB_VERSION__) && __LSB_VERSION__ < 41)
+-#   define KWSYS_SYSTEMINFORMATION_HAVE_BACKTRACE
++#  if defined(KWSYS_SYSTEMINFORMATION_HAS_CPP_DEMANGLE)
++#    include <cxxabi.h>
++#  endif
++#  if defined(KWSYS_SYSTEMINFORMATION_HAS_SYMBOL_LOOKUP)
++#    include <dlfcn.h>
+ #  endif
+ # endif
+ # if defined(KWSYS_CXX_HAS_RLIMIT64)
+@@ -357,6 +371,10 @@ class SystemInformationImplementation
+   static
+   void SetStackTraceOnError(int enable);
+ 
++  // get current stack
++  static
++  kwsys_stl::string GetProgramStack(int firstFrame, int wholePath);
++
+   /** Run the different checks */
+   void RunCPUCheck();
+   void RunOSCheck();
+@@ -812,6 +830,11 @@ void SystemInformation::SetStackTraceOnError(int enable)
+   SystemInformationImplementation::SetStackTraceOnError(enable);
+ }
+ 
++kwsys_stl::string SystemInformation::GetProgramStack(int firstFrame, int wholePath)
++{
++  return SystemInformationImplementation::GetProgramStack(firstFrame, wholePath);
++}
++
+ /** Run the different checks */
+ void SystemInformation::RunCPUCheck()
+ {
+@@ -908,6 +931,12 @@ int LoadLines(
+         }
+       continue;
+       }
++    char *pBuf=buf;
++    while(*pBuf)
++      {
++      if (*pBuf=='\n') *pBuf='\0';
++      pBuf+=1;
++      }
+     lines.push_back(buf);
+     ++nRead;
+     }
+@@ -1046,12 +1075,29 @@ void StacktraceSignalHandler(
+ #if defined(__linux) || defined(__APPLE__)
+   kwsys_ios::ostringstream oss;
+   oss
++     << kwsys_ios::endl
+      << "=========================================================" << kwsys_ios::endl
+      << "Process id " << getpid() << " ";
+   switch (sigNo)
+     {
++    case SIGINT:
++      oss << "Caught SIGINT";
++      break;
++
++    case SIGTERM:
++      oss << "Caught SIGTERM";
++      break;
++
++    case SIGABRT:
++      oss << "Caught SIGABRT";
++      break;
++
+     case SIGFPE:
+-      oss << "Caught SIGFPE ";
++      oss
++        << "Caught SIGFPE at "
++        << (sigInfo->si_addr==0?"0x":"")
++        << sigInfo->si_addr
++        <<  " ";
+       switch (sigInfo->si_code)
+         {
+ # if defined(FPE_INTDIV)
+@@ -1099,7 +1145,11 @@ void StacktraceSignalHandler(
+       break;
+ 
+     case SIGSEGV:
+-      oss << "Caught SIGSEGV ";
++      oss
++        << "Caught SIGSEGV at "
++        << (sigInfo->si_addr==0?"0x":"")
++        << sigInfo->si_addr
++        <<  " ";
+       switch (sigInfo->si_code)
+         {
+         case SEGV_MAPERR:
+@@ -1116,16 +1166,12 @@ void StacktraceSignalHandler(
+         }
+       break;
+ 
+-    case SIGINT:
+-      oss << "Caught SIGTERM";
+-      break;
+-
+-    case SIGTERM:
+-      oss << "Caught SIGTERM";
+-      break;
+-
+     case SIGBUS:
+-      oss << "Caught SIGBUS type ";
++      oss
++        << "Caught SIGBUS at "
++        << (sigInfo->si_addr==0?"0x":"")
++        << sigInfo->si_addr
++        <<  " ";
+       switch (sigInfo->si_code)
+         {
+         case BUS_ADRALN:
+@@ -1134,13 +1180,25 @@ void StacktraceSignalHandler(
+ 
+ # if defined(BUS_ADRERR)
+         case BUS_ADRERR:
+-          oss << "non-exestent physical address";
++          oss << "nonexistent physical address";
+           break;
+ # endif
+ 
+ # if defined(BUS_OBJERR)
+         case BUS_OBJERR:
+-          oss << "object specific hardware error";
++          oss << "object-specific hardware error";
++          break;
++# endif
++
++# if defined(BUS_MCEERR_AR)
++        case BUS_MCEERR_AR:
++          oss << "Hardware memory error consumed on a machine check; action required.";
++          break;
++# endif
++
++# if defined(BUS_MCEERR_AO)
++        case BUS_MCEERR_AO:
++          oss << "Hardware memory error detected in process but not consumed; action optional.";
+           break;
+ # endif
+ 
+@@ -1151,7 +1209,11 @@ void StacktraceSignalHandler(
+       break;
+ 
+     case SIGILL:
+-      oss << "Caught SIGILL ";
++      oss
++        << "Caught SIGILL at "
++        << (sigInfo->si_addr==0?"0x":"")
++        << sigInfo->si_addr
++        <<  " ";
+       switch (sigInfo->si_code)
+         {
+         case ILL_ILLOPC:
+@@ -1205,20 +1267,16 @@ void StacktraceSignalHandler(
+       oss << "Caught " << sigNo << " code " << sigInfo->si_code;
+       break;
+     }
+-  oss << kwsys_ios::endl;
+-#if defined(KWSYS_SYSTEMINFORMATION_HAVE_BACKTRACE)
+-  oss << "Program Stack:" << kwsys_ios::endl;
+-  void *stackSymbols[128];
+-  int n=backtrace(stackSymbols,128);
+-  char **stackText=backtrace_symbols(stackSymbols,n);
+-  for (int i=0; i<n; ++i)
+-    {
+-    oss << "  " << stackText[i] << kwsys_ios::endl;
+-    }
+-#endif
+   oss
+-     << "=========================================================" << kwsys_ios::endl;
++    << kwsys_ios::endl
++    << "Program Stack:" << kwsys_ios::endl
++    << SystemInformationImplementation::GetProgramStack(2,0)
++    << "=========================================================" << kwsys_ios::endl;
+   kwsys_ios::cerr << oss.str() << kwsys_ios::endl;
++
++  // restore the previously registered handlers
++  // and abort
++  SystemInformationImplementation::SetStackTraceOnError(0);
+   abort();
+ #else
+   // avoid warning C4100
+@@ -1227,8 +1285,213 @@ void StacktraceSignalHandler(
+ #endif
+ }
+ #endif
++
++#if defined(KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE)
++#define safes(_arg)((_arg)?(_arg):"???")
++
++// Description:
++// A container for symbol properties. Each instance
++// must be Initialized.
++class SymbolProperties
++{
++public:
++  SymbolProperties();
++
++  // Description:
++  // The SymbolProperties instance must be initialized by
++  // passing a stack address.
++  void Initialize(void *address);
++
++  // Description:
++  // Get the symbol's stack address.
++  void *GetAddress() const { return this->Address; }
++
++  // Description:
++  // If not set paths will be removed. eg, from a binary
++  // or source file.
++  void SetReportPath(int rp){ this->ReportPath=rp; }
++
++  // Description:
++  // Set/Get the name of the binary file that the symbol
++  // is found in.
++  void SetBinary(const char *binary)
++    { this->Binary=safes(binary); }
++
++  kwsys_stl::string GetBinary() const;
++
++  // Description:
++  // Set the name of the function that the symbol is found in.
++  // If c++ demangling is supported it will be demangled.
++  void SetFunction(const char *function)
++    { this->Function=this->Demangle(function); }
++
++  kwsys_stl::string GetFunction() const
++    { return this->Function; }
++
++  // Description:
++  // Set/Get the name of the source file where the symbol
++  // is defined.
++  void SetSourceFile(const char *sourcefile)
++    { this->SourceFile=safes(sourcefile); }
++
++  kwsys_stl::string GetSourceFile() const
++    { return this->GetFileName(this->SourceFile); }
++
++  // Description:
++  // Set/Get the line number where the symbol is defined
++  void SetLineNumber(long linenumber){ this->LineNumber=linenumber; }
++  long GetLineNumber() const { return this->LineNumber; }
++
++  // Description:
++  // Set the address where the biinary image is mapped
++  // into memory.
++  void SetBinaryBaseAddress(void *address)
++    { this->BinaryBaseAddress=address; }
++
++private:
++  void *GetRealAddress() const
++    { return (void*)((char*)this->Address-(char*)this->BinaryBaseAddress); }
++
++  kwsys_stl::string GetFileName(const kwsys_stl::string &path) const;
++  kwsys_stl::string Demangle(const char *symbol) const;
++
++private:
++  kwsys_stl::string Binary;
++  void *BinaryBaseAddress;
++  void *Address;
++  kwsys_stl::string SourceFile;
++  kwsys_stl::string Function;
++  long LineNumber;
++  int ReportPath;
++};
++
++// --------------------------------------------------------------------------
++kwsys_ios::ostream &operator<<(
++      kwsys_ios::ostream &os,
++      const SymbolProperties &sp)
++{
++#if defined(KWSYS_SYSTEMINFORMATION_HAS_SYMBOL_LOOKUP)
++  os
++    << kwsys_ios::hex << sp.GetAddress() << " : "
++    << sp.GetFunction()
++    << " [(" << sp.GetBinary() << ") "
++    << sp.GetSourceFile() << ":"
++    << kwsys_ios::dec << sp.GetLineNumber() << "]";
++#elif defined(KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE)
++  void *addr = sp.GetAddress();
++  char **syminfo = backtrace_symbols(&addr,1);
++  os << safes(syminfo[0]);
++  free(syminfo);
++#else
++  (void)os;
++  (void)sp;
++#endif
++  return os;
++}
++
++// --------------------------------------------------------------------------
++SymbolProperties::SymbolProperties()
++{
++  // not using an initializer list
++  // to avoid some PGI compiler warnings
++  this->SetBinary("???");
++  this->SetBinaryBaseAddress(NULL);
++  this->Address = NULL;
++  this->SetSourceFile("???");
++  this->SetFunction("???");
++  this->SetLineNumber(-1);
++  this->SetReportPath(0);
++  // avoid PGI compiler warnings
++  this->GetRealAddress();
++  this->GetFunction();
++  this->GetSourceFile();
++  this->GetLineNumber();
++}
++
++// --------------------------------------------------------------------------
++kwsys_stl::string SymbolProperties::GetFileName(const kwsys_stl::string &path) const
++{
++  kwsys_stl::string file(path);
++  if (!this->ReportPath)
++    {
++    size_t at = file.rfind("/");
++    if (at!=kwsys_stl::string::npos)
++      {
++      file = file.substr(at+1,kwsys_stl::string::npos);
++      }
++    }
++  return file;
++}
++
++// --------------------------------------------------------------------------
++kwsys_stl::string SymbolProperties::GetBinary() const
++{
++// only linux has proc fs
++#if defined(__linux__)
++  if (this->Binary=="/proc/self/exe")
++    {
++    kwsys_stl::string binary;
++    char buf[1024]={'\0'};
++    ssize_t ll=0;
++    if ((ll=readlink("/proc/self/exe",buf,1024))>0)
++      {
++      buf[ll]='\0';
++      binary=buf;
++      }
++    else
++      {
++      binary="/proc/self/exe";
++      }
++    return this->GetFileName(binary);
++    }
++#endif
++  return this->GetFileName(this->Binary);
++}
++
++// --------------------------------------------------------------------------
++kwsys_stl::string SymbolProperties::Demangle(const char *symbol) const
++{
++  kwsys_stl::string result = safes(symbol);
++#if defined(KWSYS_SYSTEMINFORMATION_HAS_CPP_DEMANGLE)
++  int status = 0;
++  size_t bufferLen = 1024;
++  char *buffer = (char*)malloc(1024);
++  char *demangledSymbol =
++    abi::__cxa_demangle(symbol, buffer, &bufferLen, &status);
++  if (!status)
++    {
++    result = demangledSymbol;
++    }
++  free(buffer);
++#else
++  (void)symbol;
++#endif
++  return result;
++}
++
++// --------------------------------------------------------------------------
++void SymbolProperties::Initialize(void *address)
++{
++  this->Address = address;
++#if defined(KWSYS_SYSTEMINFORMATION_HAS_SYMBOL_LOOKUP)
++  // first fallback option can demangle c++ functions
++  Dl_info info;
++  int ierr=dladdr(this->Address,&info);
++  if (ierr && info.dli_sname && info.dli_saddr)
++    {
++    this->SetBinary(info.dli_fname);
++    this->SetFunction(info.dli_sname);
++    }
++#else
++  // second fallback use builtin backtrace_symbols
++  // to decode the bactrace.
++#endif
++}
++#endif // don't define this class if we're not using it
++
+ } // anonymous namespace
+ 
++
+ SystemInformationImplementation::SystemInformationImplementation()
+ {
+   this->TotalVirtualMemory = 0;
+@@ -3335,6 +3598,54 @@ SystemInformationImplementation::GetProcessId()
+ #endif
+ }
+ 
++/**
++return current program stack in a string
++demangle cxx symbols if possible.
++*/
++kwsys_stl::string SystemInformationImplementation::GetProgramStack(
++      int firstFrame,
++      int wholePath)
++{
++  kwsys_stl::string programStack = ""
++#if !defined(KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE)
++    "WARNING: The stack could not be examined "
++    "because backtrace is not supported.\n"
++#elif !defined(KWSYS_SYSTEMINFORMATION_HAS_DEBUG_BUILD)
++    "WARNING: The stack trace will not use advanced "
++    "capabilities because this is a release build.\n"
++#else
++# if !defined(KWSYS_SYSTEMINFORMATION_HAS_SYMBOL_LOOKUP)
++    "WARNING: Function names will not be demangled because "
++    "dladdr is not available.\n"
++# endif
++# if !defined(KWSYS_SYSTEMINFORMATION_HAS_CPP_DEMANGLE)
++    "WARNING: Function names will not be demangled "
++    "because cxxabi is not available.\n"
++# endif
++#endif
++    ;
++
++  kwsys_ios::ostringstream oss;
++#if defined(KWSYS_SYSTEMINFORMATION_HAS_BACKTRACE)
++  void *stackSymbols[256];
++  int nFrames=backtrace(stackSymbols,256);
++  for (int i=firstFrame; i<nFrames; ++i)
++    {
++    SymbolProperties symProps;
++    symProps.SetReportPath(wholePath);
++    symProps.Initialize(stackSymbols[i]);
++    oss << symProps << kwsys_ios::endl;
++    }
++#else
++  (void)firstFrame;
++  (void)wholePath;
++#endif
++  programStack += oss.str();
++
++  return programStack;
++}
++
++
+ /**
+ when set print stack trace in response to common signals.
+ */
+@@ -3342,6 +3653,7 @@ void SystemInformationImplementation::SetStackTraceOnError(int enable)
+ {
+ #if !defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
+   static int saOrigValid=0;
++  static struct sigaction saABRTOrig;
+   static struct sigaction saSEGVOrig;
+   static struct sigaction saTERMOrig;
+   static struct sigaction saINTOrig;
+@@ -3349,9 +3661,11 @@ void SystemInformationImplementation::SetStackTraceOnError(int enable)
+   static struct sigaction saBUSOrig;
+   static struct sigaction saFPEOrig;
+ 
++
+   if (enable && !saOrigValid)
+     {
+     // save the current actions
++    sigaction(SIGABRT,0,&saABRTOrig);
+     sigaction(SIGSEGV,0,&saSEGVOrig);
+     sigaction(SIGTERM,0,&saTERMOrig);
+     sigaction(SIGINT,0,&saINTOrig);
+@@ -3365,9 +3679,10 @@ void SystemInformationImplementation::SetStackTraceOnError(int enable)
+     // install ours
+     struct sigaction sa;
+     sa.sa_sigaction=(SigAction)StacktraceSignalHandler;
+-    sa.sa_flags=SA_SIGINFO|SA_RESTART;
++    sa.sa_flags=SA_SIGINFO|SA_RESTART|SA_RESETHAND;
+     sigemptyset(&sa.sa_mask);
+ 
++    sigaction(SIGABRT,&sa,0);
+     sigaction(SIGSEGV,&sa,0);
+     sigaction(SIGTERM,&sa,0);
+     sigaction(SIGINT,&sa,0);
+@@ -3379,6 +3694,7 @@ void SystemInformationImplementation::SetStackTraceOnError(int enable)
+   if (!enable && saOrigValid)
+     {
+     // restore previous actions
++    sigaction(SIGABRT,&saABRTOrig,0);
+     sigaction(SIGSEGV,&saSEGVOrig,0);
+     sigaction(SIGTERM,&saTERMOrig,0);
+     sigaction(SIGINT,&saINTOrig,0);
+diff --git a/Source/kwsys/SystemInformation.hxx.in b/Source/kwsys/SystemInformation.hxx.in
+index f7c454e0d43..a9fd05defeb 100644
+--- a/Source/kwsys/SystemInformation.hxx.in
++++ b/Source/kwsys/SystemInformation.hxx.in
+@@ -136,6 +136,12 @@ public:
+   static
+   void SetStackTraceOnError(int enable);
+ 
++  // format and return the current program stack in a string. In
++  // order to produce an informative stack trace the application
++  // should be dynamically linked and compiled with debug symbols.
++  static
++  kwsys_stl::string GetProgramStack(int firstFrame, int wholePath);
++
+   /** Run the different checks */
+   void RunCPUCheck();
+   void RunOSCheck();
+diff --git a/Source/kwsys/SystemTools.cxx b/Source/kwsys/SystemTools.cxx
+index 935b836cb02..e9a1fd37d22 100644
+--- a/Source/kwsys/SystemTools.cxx
++++ b/Source/kwsys/SystemTools.cxx
+@@ -695,6 +695,52 @@ void SystemTools::ReplaceString(kwsys_stl::string& source,
+ #endif
+ 
+ #if defined(_WIN32) && !defined(__CYGWIN__)
++static bool SystemToolsParseRegistryKey(const char* key,
++                                        HKEY& primaryKey,
++                                        kwsys_stl::string& second,
++                                        kwsys_stl::string& valuename)
++{
++  kwsys_stl::string primary = key;
++
++  size_t start = primary.find("\\");
++  if (start == kwsys_stl::string::npos)
++    {
++    return false;
++    }
++
++  size_t valuenamepos = primary.find(";");
++  if (valuenamepos != kwsys_stl::string::npos)
++    {
++    valuename = primary.substr(valuenamepos+1);
++    }
++
++  second = primary.substr(start+1, valuenamepos-start-1);
++  primary = primary.substr(0, start);
++
++  if (primary == "HKEY_CURRENT_USER")
++    {
++    primaryKey = HKEY_CURRENT_USER;
++    }
++  if (primary == "HKEY_CURRENT_CONFIG")
++    {
++    primaryKey = HKEY_CURRENT_CONFIG;
++    }
++  if (primary == "HKEY_CLASSES_ROOT")
++    {
++    primaryKey = HKEY_CLASSES_ROOT;
++    }
++  if (primary == "HKEY_LOCAL_MACHINE")
++    {
++    primaryKey = HKEY_LOCAL_MACHINE;
++    }
++  if (primary == "HKEY_USERS")
++    {
++    primaryKey = HKEY_USERS;
++    }
++
++  return true;
++}
++
+ static DWORD SystemToolsMakeRegistryMode(DWORD mode,
+                                          SystemTools::KeyWOW64 view)
+ {
+@@ -718,6 +764,55 @@ static DWORD SystemToolsMakeRegistryMode(DWORD mode,
+ }
+ #endif
+ 
++#if defined(_WIN32) && !defined(__CYGWIN__)
++bool
++SystemTools::GetRegistrySubKeys(const char *key,
++                                kwsys_stl::vector<kwsys_stl::string>& subkeys,
++                                KeyWOW64 view)
++{
++  HKEY primaryKey = HKEY_CURRENT_USER;
++  kwsys_stl::string second;
++  kwsys_stl::string valuename;
++  if (!SystemToolsParseRegistryKey(key, primaryKey, second, valuename))
++    {
++    return false;
++    }
++
++  HKEY hKey;
++  if(RegOpenKeyEx(primaryKey,
++                  second.c_str(),
++                  0,
++                  SystemToolsMakeRegistryMode(KEY_READ, view),
++                  &hKey) != ERROR_SUCCESS)
++    {
++    return false;
++    }
++  else
++    {
++    char name[1024];
++    DWORD dwNameSize = sizeof(name)/sizeof(name[0]);
++
++    DWORD i = 0;
++    while (RegEnumKey(hKey, i, name, dwNameSize) == ERROR_SUCCESS)
++      {
++      subkeys.push_back(name);
++      ++i;
++      }
++
++    RegCloseKey(hKey);
++    }
++
++  return true;
++}
++#else
++bool SystemTools::GetRegistrySubKeys(const char *,
++                                     kwsys_stl::vector<kwsys_stl::string>&,
++                                     KeyWOW64)
++{
++  return false;
++}
++#endif
++
+ // Read a registry value.
+ // Example :
+ //      HKEY_LOCAL_MACHINE\SOFTWARE\Python\PythonCore\2.1\InstallPath
+@@ -730,47 +825,14 @@ bool SystemTools::ReadRegistryValue(const char *key, kwsys_stl::string &value,
+                                     KeyWOW64 view)
+ {
+   bool valueset = false;
+-  kwsys_stl::string primary = key;
++  HKEY primaryKey = HKEY_CURRENT_USER;
+   kwsys_stl::string second;
+   kwsys_stl::string valuename;
+-
+-  size_t start = primary.find("\\");
+-  if (start == kwsys_stl::string::npos)
++  if (!SystemToolsParseRegistryKey(key, primaryKey, second, valuename))
+     {
+     return false;
+     }
+ 
+-  size_t valuenamepos = primary.find(";");
+-  if (valuenamepos != kwsys_stl::string::npos)
+-    {
+-    valuename = primary.substr(valuenamepos+1);
+-    }
+-
+-  second = primary.substr(start+1, valuenamepos-start-1);
+-  primary = primary.substr(0, start);
+-
+-  HKEY primaryKey = HKEY_CURRENT_USER;
+-  if (primary == "HKEY_CURRENT_USER")
+-    {
+-    primaryKey = HKEY_CURRENT_USER;
+-    }
+-  if (primary == "HKEY_CURRENT_CONFIG")
+-    {
+-    primaryKey = HKEY_CURRENT_CONFIG;
+-    }
+-  if (primary == "HKEY_CLASSES_ROOT")
+-    {
+-    primaryKey = HKEY_CLASSES_ROOT;
+-    }
+-  if (primary == "HKEY_LOCAL_MACHINE")
+-    {
+-    primaryKey = HKEY_LOCAL_MACHINE;
+-    }
+-  if (primary == "HKEY_USERS")
+-    {
+-    primaryKey = HKEY_USERS;
+-    }
+-
+   HKEY hKey;
+   if(RegOpenKeyEx(primaryKey,
+                   second.c_str(),
+@@ -834,47 +896,14 @@ bool SystemTools::ReadRegistryValue(const char *, kwsys_stl::string &,
+ bool SystemTools::WriteRegistryValue(const char *key, const char *value,
+                                      KeyWOW64 view)
+ {
+-  kwsys_stl::string primary = key;
++  HKEY primaryKey = HKEY_CURRENT_USER;
+   kwsys_stl::string second;
+   kwsys_stl::string valuename;
+-
+-  size_t start = primary.find("\\");
+-  if (start == kwsys_stl::string::npos)
++  if (!SystemToolsParseRegistryKey(key, primaryKey, second, valuename))
+     {
+     return false;
+     }
+ 
+-  size_t valuenamepos = primary.find(";");
+-  if (valuenamepos != kwsys_stl::string::npos)
+-    {
+-    valuename = primary.substr(valuenamepos+1);
+-    }
+-
+-  second = primary.substr(start+1, valuenamepos-start-1);
+-  primary = primary.substr(0, start);
+-
+-  HKEY primaryKey = HKEY_CURRENT_USER;
+-  if (primary == "HKEY_CURRENT_USER")
+-    {
+-    primaryKey = HKEY_CURRENT_USER;
+-    }
+-  if (primary == "HKEY_CURRENT_CONFIG")
+-    {
+-    primaryKey = HKEY_CURRENT_CONFIG;
+-    }
+-  if (primary == "HKEY_CLASSES_ROOT")
+-    {
+-    primaryKey = HKEY_CLASSES_ROOT;
+-    }
+-  if (primary == "HKEY_LOCAL_MACHINE")
+-    {
+-    primaryKey = HKEY_LOCAL_MACHINE;
+-    }
+-  if (primary == "HKEY_USERS")
+-    {
+-    primaryKey = HKEY_USERS;
+-    }
+-
+   HKEY hKey;
+   DWORD dwDummy;
+   char lpClass[] = "";
+@@ -919,47 +948,14 @@ bool SystemTools::WriteRegistryValue(const char *, const char *, KeyWOW64)
+ #if defined(_WIN32) && !defined(__CYGWIN__)
+ bool SystemTools::DeleteRegistryValue(const char *key, KeyWOW64 view)
+ {
+-  kwsys_stl::string primary = key;
++  HKEY primaryKey = HKEY_CURRENT_USER;
+   kwsys_stl::string second;
+   kwsys_stl::string valuename;
+-
+-  size_t start = primary.find("\\");
+-  if (start == kwsys_stl::string::npos)
++  if (!SystemToolsParseRegistryKey(key, primaryKey, second, valuename))
+     {
+     return false;
+     }
+ 
+-  size_t valuenamepos = primary.find(";");
+-  if (valuenamepos != kwsys_stl::string::npos)
+-    {
+-    valuename = primary.substr(valuenamepos+1);
+-    }
+-
+-  second = primary.substr(start+1, valuenamepos-start-1);
+-  primary = primary.substr(0, start);
+-
+-  HKEY primaryKey = HKEY_CURRENT_USER;
+-  if (primary == "HKEY_CURRENT_USER")
+-    {
+-    primaryKey = HKEY_CURRENT_USER;
+-    }
+-  if (primary == "HKEY_CURRENT_CONFIG")
+-    {
+-    primaryKey = HKEY_CURRENT_CONFIG;
+-    }
+-  if (primary == "HKEY_CLASSES_ROOT")
+-    {
+-    primaryKey = HKEY_CLASSES_ROOT;
+-    }
+-  if (primary == "HKEY_LOCAL_MACHINE")
+-    {
+-    primaryKey = HKEY_LOCAL_MACHINE;
+-    }
+-  if (primary == "HKEY_USERS")
+-    {
+-    primaryKey = HKEY_USERS;
+-    }
+-
+   HKEY hKey;
+   if(RegOpenKeyEx(primaryKey,
+                   second.c_str(),
+@@ -4869,7 +4865,8 @@ static int SystemToolsDebugReport(int, char* message, int*)
+ 
+ void SystemTools::EnableMSVCDebugHook()
+ {
+-  if (getenv("DART_TEST_FROM_DART"))
++  if (getenv("DART_TEST_FROM_DART") ||
++      getenv("DASHBOARD_TEST_FROM_CTEST"))
+     {
+     _CrtSetReportHook(SystemToolsDebugReport);
+     }
+diff --git a/Source/kwsys/SystemTools.hxx.in b/Source/kwsys/SystemTools.hxx.in
+index e55d4319f9d..d6dae398650 100644
+--- a/Source/kwsys/SystemTools.hxx.in
++++ b/Source/kwsys/SystemTools.hxx.in
+@@ -715,6 +715,13 @@ public:
+    */
+   enum KeyWOW64 { KeyWOW64_Default, KeyWOW64_32, KeyWOW64_64 };
+ 
++  /**
++   * Get a list of subkeys.
++   */
++  static bool GetRegistrySubKeys(const char *key,
++                                 kwsys_stl::vector<kwsys_stl::string>& subkeys,
++                                 KeyWOW64 view = KeyWOW64_Default);
++
+   /**
+    * Read a registry value
+    */
+diff --git a/Source/kwsys/auto_ptr.hxx.in b/Source/kwsys/auto_ptr.hxx.in
+index 857b1db3cf6..ad9654cb4c6 100644
+--- a/Source/kwsys/auto_ptr.hxx.in
++++ b/Source/kwsys/auto_ptr.hxx.in
+@@ -31,6 +31,17 @@
+ # define @KWSYS_NAMESPACE@_AUTO_PTR_CAST(a) a
+ #endif
+ 
++// In C++11, clang will warn about using dynamic exception specifications
++// as they are deprecated.  But as this class is trying to faithfully
++// mimic std::auto_ptr, we want to keep the 'throw()' decorations below.
++// So we suppress the warning.
++#if defined(__clang__) && defined(__has_warning)
++# if __has_warning("-Wdeprecated")
++#  pragma clang diagnostic push
++#  pragma clang diagnostic ignored "-Wdeprecated"
++# endif
++#endif
++
+ namespace @KWSYS_NAMESPACE@
+ {
+ 
+@@ -198,4 +209,11 @@ public:
+ 
+ } // namespace @KWSYS_NAMESPACE@
+ 
++// Undo warning suppression.
++#if defined(__clang__) && defined(__has_warning)
++# if __has_warning("-Wdeprecated")
++#  pragma clang diagnostic pop
++# endif
++#endif
++
+ #endif
+diff --git a/Source/kwsys/hashtable.hxx.in b/Source/kwsys/hashtable.hxx.in
+index c835503048a..651de82bf98 100644
+--- a/Source/kwsys/hashtable.hxx.in
++++ b/Source/kwsys/hashtable.hxx.in
+@@ -62,6 +62,17 @@
+ # pragma set woff 3970 /* pointer to int conversion */ 3321 3968
+ #endif
+ 
++// In C++11, clang will warn about using dynamic exception specifications
++// as they are deprecated.  But as this class is trying to faithfully
++// mimic unordered_set and unordered_map, we want to keep the 'throw()'
++// decorations below.  So we suppress the warning.
++#if defined(__clang__) && defined(__has_warning)
++# if __has_warning("-Wdeprecated")
++#  pragma clang diagnostic push
++#  pragma clang diagnostic ignored "-Wdeprecated"
++# endif
++#endif
++
+ #if @KWSYS_NAMESPACE@_STL_HAS_ALLOCATOR_TEMPLATE
+ # define @KWSYS_NAMESPACE@_HASH_DEFAULT_ALLOCATOR(T) @KWSYS_NAMESPACE@_stl::allocator< T >
+ #elif @KWSYS_NAMESPACE@_STL_HAS_ALLOCATOR_NONTEMPLATE
+@@ -1268,6 +1279,13 @@ using @KWSYS_NAMESPACE@::operator==;
+ using @KWSYS_NAMESPACE@::operator!=;
+ #endif
+ 
++// Undo warning suppression.
++#if defined(__clang__) && defined(__has_warning)
++# if __has_warning("-Wdeprecated")
++#  pragma clang diagnostic pop
++# endif
++#endif
++
+ #if defined(_MSC_VER)
+ # pragma warning (pop)
+ #endif
+diff --git a/Source/kwsys/kwsysPlatformTests.cmake b/Source/kwsys/kwsysPlatformTests.cmake
+index d042450ee8d..f9ee254f029 100644
+--- a/Source/kwsys/kwsysPlatformTests.cmake
++++ b/Source/kwsys/kwsysPlatformTests.cmake
+@@ -19,6 +19,7 @@ MACRO(KWSYS_PLATFORM_TEST lang var description invert)
+       ${CMAKE_CURRENT_BINARY_DIR}
+       ${CMAKE_CURRENT_SOURCE_DIR}/${KWSYS_PLATFORM_TEST_FILE_${lang}}
+       COMPILE_DEFINITIONS -DTEST_${var} ${KWSYS_PLATFORM_TEST_DEFINES} ${KWSYS_PLATFORM_TEST_EXTRA_FLAGS}
++      CMAKE_FLAGS "-DLINK_LIBRARIES:STRING=${KWSYS_PLATFORM_TEST_LINK_LIBRARIES}"
+       OUTPUT_VARIABLE OUTPUT)
+     IF(${var}_COMPILED)
+       FILE(APPEND
+@@ -150,9 +151,11 @@ ENDMACRO(KWSYS_PLATFORM_C_TEST_RUN)
+ MACRO(KWSYS_PLATFORM_CXX_TEST var description invert)
+   SET(KWSYS_PLATFORM_TEST_DEFINES ${KWSYS_PLATFORM_CXX_TEST_DEFINES})
+   SET(KWSYS_PLATFORM_TEST_EXTRA_FLAGS ${KWSYS_PLATFORM_CXX_TEST_EXTRA_FLAGS})
++  SET(KWSYS_PLATFORM_TEST_LINK_LIBRARIES ${KWSYS_PLATFORM_CXX_TEST_LINK_LIBRARIES})
+   KWSYS_PLATFORM_TEST(CXX "${var}" "${description}" "${invert}")
+   SET(KWSYS_PLATFORM_TEST_DEFINES)
+   SET(KWSYS_PLATFORM_TEST_EXTRA_FLAGS)
++  SET(KWSYS_PLATFORM_TEST_LINK_LIBRARIES)
+ ENDMACRO(KWSYS_PLATFORM_CXX_TEST)
+ 
+ MACRO(KWSYS_PLATFORM_CXX_TEST_RUN var description invert)
+diff --git a/Source/kwsys/kwsysPlatformTestsCXX.cxx b/Source/kwsys/kwsysPlatformTestsCXX.cxx
+index a7e3b50c0de..be7a09ee294 100644
+--- a/Source/kwsys/kwsysPlatformTestsCXX.cxx
++++ b/Source/kwsys/kwsysPlatformTestsCXX.cxx
+@@ -513,6 +513,54 @@ int main()
+ }
+ #endif
+ 
++#ifdef TEST_KWSYS_CXX_HAS_BACKTRACE
++#if defined(__PATHSCALE__) || defined(__PATHCC__) \
++  || (defined(__LSB_VERSION__) && (__LSB_VERSION__ < 41))
++backtrace doesnt work with this compiler or os
++#endif
++#if (defined(__GNUC__) || defined(__PGI)) && !defined(_GNU_SOURCE)
++# define _GNU_SOURCE
++#endif
++#include <execinfo.h>
++int main()
++{
++  void *stackSymbols[256];
++  backtrace(stackSymbols,256);
++  backtrace_symbols(&stackSymbols[0],1);
++  return 0;
++}
++#endif
++
++#ifdef TEST_KWSYS_CXX_HAS_DLADDR
++#if (defined(__GNUC__) || defined(__PGI)) && !defined(_GNU_SOURCE)
++# define _GNU_SOURCE
++#endif
++#include <dlfcn.h>
++int main()
++{
++  Dl_info info;
++  int ierr=dladdr((void*)main,&info);
++  return 0;
++}
++#endif
++
++#ifdef TEST_KWSYS_CXX_HAS_CXXABI
++#if (defined(__GNUC__) || defined(__PGI)) && !defined(_GNU_SOURCE)
++# define _GNU_SOURCE
++#endif
++#include <cxxabi.h>
++int main()
++{
++  int status = 0;
++  size_t bufferLen = 512;
++  char buffer[512] = {'\0'};
++  const char *function="_ZN5kwsys17SystemInformation15GetProgramStackEii";
++  char *demangledFunction =
++    abi::__cxa_demangle(function, buffer, &bufferLen, &status);
++  return status;
++}
++#endif
++
+ #ifdef TEST_KWSYS_CXX_TYPE_INFO
+ /* Collect fundamental type information and save it to a CMake script.  */
+ 
+diff --git a/Source/kwsys/testSystemInformation.cxx b/Source/kwsys/testSystemInformation.cxx
+index 738043f77e2..53d51ac4056 100644
+--- a/Source/kwsys/testSystemInformation.cxx
++++ b/Source/kwsys/testSystemInformation.cxx
+@@ -95,7 +95,24 @@ int testSystemInformation(int, char*[])
+       kwsys_ios::cout << "CPU feature " << i << "\n";
+       }
+     }
+-  //int GetProcessorCacheXSize(long int);
+-//  bool DoesCPUSupportFeature(long int);
++
++  /* test stack trace
++  */
++  kwsys_ios::cout
++    << "Program Stack:" << kwsys_ios::endl
++    << kwsys::SystemInformation::GetProgramStack(0,0) << kwsys_ios::endl
++    << kwsys_ios::endl;
++
++  /* test segv handler
++  info.SetStackTraceOnError(1);
++  double *d = (double*)100;
++  *d=0;
++  */
++
++  /* test abort handler
++  info.SetStackTraceOnError(1);
++  abort();
++  */
++
+   return 0;
+ }

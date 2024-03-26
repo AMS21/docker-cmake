@@ -1,0 +1,12 @@
+diff --git a/Source/kwsys/Registry.cxx b/Source/kwsys/Registry.cxx
+index b09898adef..45b0803895 100644
+--- a/Source/kwsys/Registry.cxx
++++ b/Source/kwsys/Registry.cxx
+@@ -41,6 +41,7 @@
+ # include <windows.h>
+ #endif
+ 
++#include <cstring>
+ 
+ namespace KWSYS_NAMESPACE
+ {
