@@ -70,7 +70,7 @@ jobs:
           context: ./
           build-args: "VERSION=release"
           push: true
-          platforms: "linux/amd64"
+          platforms: "linux/386,linux/amd64,linux/arm,linux/arm64"
           annotations: ${{ steps.meta.outputs.annotations }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
