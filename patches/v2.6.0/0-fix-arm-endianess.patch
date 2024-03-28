@@ -1,0 +1,34 @@
+diff --git a/Source/kwsys/CPU.h.in b/Source/kwsys/CPU.h.in
+index d9c1ca8419..8757e88845 100644
+--- a/Source/kwsys/CPU.h.in
++++ b/Source/kwsys/CPU.h.in
+@@ -32,6 +32,14 @@
+ #elif defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA)
+ # define @KWSYS_NAMESPACE@_CPU_ENDIAN_ID @KWSYS_NAMESPACE@_CPU_ENDIAN_ID_LITTLE
+ 
++/* Arm */
++#elif defined(__arm__)
++# if !defined(__ARMEB__)
++#  define @KWSYS_NAMESPACE@_CPU_ENDIAN_ID @KWSYS_NAMESPACE@_CPU_ENDIAN_ID_LITTLE
++# else
++#  define @KWSYS_NAMESPACE@_CPU_ENDIAN_ID @KWSYS_NAMESPACE@_CPU_ENDIAN_ID_BIG
++# endif
++
+ /* Intel x86 */
+ #elif defined(__i386) || defined(__i386__) || defined(_M_IX86)
+ # define @KWSYS_NAMESPACE@_CPU_ENDIAN_ID @KWSYS_NAMESPACE@_CPU_ENDIAN_ID_LITTLE
+@@ -92,6 +100,14 @@
+ #elif defined(__SYSC_ZARCH__)
+ # define @KWSYS_NAMESPACE@_CPU_ENDIAN_ID @KWSYS_NAMESPACE@_CPU_ENDIAN_ID_BIG
+ 
++/* Aarch64 */
++#elif defined(__aarch64__)
++# if !defined(__AARCH64EB__)
++#  define @KWIML@_ABI_ENDIAN_ID @KWIML@_ABI_ENDIAN_ID_LITTLE
++# else
++#  define @KWIML@_ABI_ENDIAN_ID @KWIML@_ABI_ENDIAN_ID_BIG
++# endif
++
+ /* Unknown CPU */
+ #else
+ # define @KWSYS_NAMESPACE@_CPU_ENDIAN_ID 0
