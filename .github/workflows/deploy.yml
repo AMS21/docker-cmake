@@ -33,7 +33,8 @@ jobs:
           - { version: "v3.29.0", tag: "3.29.0", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
 
           # CMake 3.28.x
-          - { version: "v3.28.4", tag: "3.28.4", latest: false, latest_major: false, latest_minor: true,  latest_patch: true  }
+          - { version: "v3.28.5", tag: "3.28.5", latest: false, latest_major: false, latest_minor: true,  latest_patch: true  }
+          - { version: "v3.28.4", tag: "3.28.4", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v3.28.3", tag: "3.28.3", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v3.28.2", tag: "3.28.2", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v3.28.1", tag: "3.28.1", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
