@@ -19,9 +19,6 @@ permissions:
   id-token: write
   packages: write
 
-env:
-  IMAGE_NAME: cmake
-
 jobs:
   push_to_registry:
     name: Push release
@@ -40,8 +37,8 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ${{ github.actor }}/${{ env.IMAGE_NAME }}
-            ghcr.io/${{ github.actor }}/${{ env.IMAGE_NAME }}
+            ams21/cmake
+            ghcr.io/ams21/cmake
           flavor: |
             latest=false
             prefix=
@@ -84,13 +81,13 @@ jobs:
       - name: Attest Docker Hub
         uses: actions/attest-build-provenance@v1.1.1
         with:
-          subject-name: index.docker.io/${{ github.actor }}/${{ env.IMAGE_NAME }}
+          subject-name: index.docker.io/ams21/cmake
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
       - name: Attest GitHub Container Registry
         uses: actions/attest-build-provenance@v1.1.1
         with:
-          subject-name: ghcr.io/${{ github.actor }}/${{ env.IMAGE_NAME }}
+          subject-name: ghcr.io/ams21/cmake
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
