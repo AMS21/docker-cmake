@@ -86,7 +86,7 @@ jobs:
           push-to-registry: true
 
       - name: Attest GitHub Container Registry
-        uses: actions/attest-build-provenance@v
+        uses: actions/attest-build-provenance@v1
         with:
           subject-name: ghcr.io/ams21/cmake
           subject-digest: ${{ steps.push.outputs.digest }}
