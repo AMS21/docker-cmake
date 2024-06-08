@@ -1,0 +1,46 @@
+From c3dc8935ee5fe9415d37ec138b6c087f85f15d43 Mon Sep 17 00:00:00 2001
+From: Brad King <brad.king@kitware.com>
+Date: Wed, 18 Nov 2015 10:12:25 -0500
+Subject: [PATCH] Make C and C++ default dialect detection robust to advanced
+ optimizations
+
+In commit v3.4.0-rc1~71^2 (Project: Determine default language dialect
+for the compiler, 2015-09-15) we added an "INFO:..." string to the
+compiler id detection binary.  The value can be optimized out of the
+compiler id binary unless we force it to be included by making the
+program behavior depend on it at runtime.  Add references to the value
+as we do for the other info strings already.
+
+Gentoo-Issue: https://bugs.gentoo.org/show_bug.cgi?id=565744
+---
+ Modules/CMakeCCompilerId.c.in     | 1 +
+ Modules/CMakeCXXCompilerId.cpp.in | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/Modules/CMakeCCompilerId.c.in b/Modules/CMakeCCompilerId.c.in
+index b224007807..63f8787c0b 100644
+--- a/Modules/CMakeCCompilerId.c.in
++++ b/Modules/CMakeCCompilerId.c.in
+@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
+ #ifdef SIMULATE_VERSION_MAJOR
+   require += info_simulate_version[argc];
+ #endif
++  require += info_language_dialect_default[argc];
+   (void)argv;
+   return require;
+ }
+diff --git a/Modules/CMakeCXXCompilerId.cpp.in b/Modules/CMakeCXXCompilerId.cpp.in
+index d467507665..61cd790934 100644
+--- a/Modules/CMakeCXXCompilerId.cpp.in
++++ b/Modules/CMakeCXXCompilerId.cpp.in
+@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
+ #ifdef SIMULATE_VERSION_MAJOR
+   require += info_simulate_version[argc];
+ #endif
++  require += info_language_dialect_default[argc];
+   (void)argv;
+   return require;
+ }
+-- 
+2.44.1
+
