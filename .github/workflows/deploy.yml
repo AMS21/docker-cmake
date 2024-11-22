@@ -30,7 +30,8 @@ jobs:
       matrix:
         cfg:
           # CMake 3.31.x
-          - { version: "v3.31.0", tag: "3.31.0", latest: true,  latest_major: true,  latest_minor: true,  latest_patch: true  }
+          - { version: "v3.31.1", tag: "3.31.1", latest: true,  latest_major: true,  latest_minor: true,  latest_patch: true  }
+          - { version: "v3.31.0", tag: "3.31.0", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
 
           # CMake 3.30.x
           - { version: "v3.30.6", tag: "3.30.6", latest: false, latest_major: false, latest_minor: true,  latest_patch: true  }
