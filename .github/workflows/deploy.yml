@@ -31,7 +31,7 @@ jobs:
         cfg:
           # CMake 3.31.x
           - { version: "v3.31.4", tag: "3.31.4", latest: true,  latest_major: true,  latest_minor: true,  latest_patch: true  }
-          - { version: "v3.31.3", tag: "3.31.3", latest: false, latest_major: false, latest_minor: false, latest_patch: false  }
+          - { version: "v3.31.3", tag: "3.31.3", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v3.31.2", tag: "3.31.2", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v3.31.1", tag: "3.31.1", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v3.31.0", tag: "3.31.0", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
