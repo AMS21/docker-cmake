@@ -15,5 +15,6 @@ RUN apk update && apk upgrade --no-cache && \
     make install && \
     cd .. && \
     rm -rf CMake && rm -rf patches && \
+    rm -rf /usr/local/share/cmake-*/Help && \
     apk del --purge --no-cache git linux-headers openssl-dev && \
     rm -rf /var/cache/apk/*
