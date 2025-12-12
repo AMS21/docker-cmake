@@ -1,0 +1,12 @@
+diff --git a/Utilities/cmcurl/url.c b/Utilities/cmcurl/url.c
+index b532e20825..c45e8d1f5d 100644
+--- a/Utilities/cmcurl/url.c
++++ b/Utilities/cmcurl/url.c
+@@ -178,7 +178,6 @@ RETSIGTYPE alarmfunc(int sig)
+ #ifdef HAVE_SIGSETJMP
+   siglongjmp(curl_jmpenv, 1);
+ #endif
+-  return;
+ }
+ #endif
+ #endif /* USE_ARES */

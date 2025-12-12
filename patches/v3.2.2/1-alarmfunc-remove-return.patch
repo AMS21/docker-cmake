@@ -1,0 +1,12 @@
+diff --git a/Utilities/cmcurl/lib/hostip.c b/Utilities/cmcurl/lib/hostip.c
+index 73b3f82013..b031e5b24b 100644
+--- a/Utilities/cmcurl/lib/hostip.c
++++ b/Utilities/cmcurl/lib/hostip.c
+@@ -541,7 +541,6 @@ RETSIGTYPE alarmfunc(int sig)
+   /* this is for "-ansi -Wall -pedantic" to stop complaining!   (rabe) */
+   (void)sig;
+   siglongjmp(curl_jmpenv, 1);
+-  return;
+ }
+ #endif /* USE_ALARM_TIMEOUT */
+ 

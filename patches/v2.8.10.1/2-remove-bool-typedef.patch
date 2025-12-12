@@ -1,0 +1,12 @@
+diff --git a/Utilities/cmcurl/setup.h b/Utilities/cmcurl/setup.h
+index c49e63de77..8ad4da8dff 100644
+--- a/Utilities/cmcurl/setup.h
++++ b/Utilities/cmcurl/setup.h
+@@ -130,7 +130,6 @@
+ #endif
+ 
+ #if !defined(__cplusplus) && !defined(__BEOS__) && !defined(__ECOS) && !defined(typedef_bool)
+-typedef unsigned char bool;
+ #define typedef_bool
+ #endif
+ 

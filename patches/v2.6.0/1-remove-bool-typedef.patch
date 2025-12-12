@@ -1,0 +1,24 @@
+diff --git a/Utilities/cmcurl/setup.h b/Utilities/cmcurl/setup.h
+index 851c5a980a..f5aafb342e 100644
+--- a/Utilities/cmcurl/setup.h
++++ b/Utilities/cmcurl/setup.h
+@@ -130,7 +130,6 @@
+ #endif
+ 
+ #if !defined(__cplusplus) && !defined(__BEOS__) && !defined(__ECOS) && !defined(typedef_bool)
+-typedef unsigned char bool;
+ #define typedef_bool
+ #endif
+ 
+diff --git a/Utilities/cmxmlrpc/bool.h b/Utilities/cmxmlrpc/bool.h
+index 8bf54f34f7..b2a365182f 100644
+--- a/Utilities/cmxmlrpc/bool.h
++++ b/Utilities/cmxmlrpc/bool.h
+@@ -11,7 +11,6 @@
+ #ifndef __cplusplus
+ #ifndef HAVE_BOOL
+ #define HAVE_BOOL
+-typedef int bool;
+ #endif
+ #endif
+ 
