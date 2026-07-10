@@ -29,8 +29,11 @@ jobs:
 
       matrix:
         cfg:
+          # CMake 4.4.x
+          - { version: "v4.4.0", tag: "4.4.0", latest: true,  latest_major: true,  latest_minor: true,  latest_patch: true }
+
           # CMake 4.3.x
-          - { version: "v4.3.4", tag: "4.3.4", latest: true,  latest_major: true,  latest_minor: true,  latest_patch: true  }
+          - { version: "v4.3.4", tag: "4.3.4", latest: false, latest_major: false, latest_minor: true,  latest_patch: true  }
           - { version: "v4.3.3", tag: "4.3.3", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v4.3.2", tag: "4.3.2", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
           - { version: "v4.3.1", tag: "4.3.1", latest: false, latest_major: false, latest_minor: false, latest_patch: false }
